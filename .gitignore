@@ -1,0 +1,4 @@
+data/
+*.hdf5
+model.json
+LearningCurve_loss.png
