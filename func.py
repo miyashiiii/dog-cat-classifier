@@ -63,30 +63,6 @@ def load_image(file_name, image_shape, with_normalize=True):
 
 
 ################################
-###### 画像データの前処理 ######
-################################
-
-
-def pre_process(dirname, filename, var_amount=3):
-    num = 0
-    arrlist = []
-    files = glob.glob(dirname + "/*.jpg")
-
-    for imgfile in files:
-        img = load_img(imgfile, target_size=(hw["height"], hw["width"]))  # 画像ファイルの読み込み
-        array = img_to_array(img) / 255  # 画像ファイルのnumpy化
-        arrlist.append(array)  # numpy型データをリストに追加
-        for i in range(var_amount - 1):
-            arr2 = array
-            arrlist.append(arr2)  # numpy型データをリストに追加
-        num += 1
-
-    nplist = np.array(arrlist)
-    np.save(filename, nplist)
-    print(">> " + dirname + "から" + str(num) + "個のファイル読み込み成功")
-
-
-################################
 ######### モデルの構築 #########
 ################################
 
@@ -100,23 +76,32 @@ def build_cnn():
 
     cv1_2 = Conv2D(16, 3, padding='same')(cv1_1)
     cv1_2 = Activation('relu')(cv1_2)
-    cv1_2 = Dropout(0.5)(cv1_2)
+    # cv1_2 = Dropout(0.5)(cv1_2)
 
     mp1 = MaxPooling2D(2)(cv1_2)
 
-    # cv2_1 = Conv2D(32, 3, padding='same')(mp1)
-    # cv2_1 = Activation('relu')(cv2_1)
-    # cv2_2 = Conv2D(32, 3, padding='same')(cv2_1)
-    # cv2_2 = Activation('relu')(cv2_2)
+
+    cv2_1 = Conv2D(32, 3, padding='same')(mp1)
+    cv2_1 = Activation('relu')(cv2_1)
+    cv2_2 = Conv2D(32, 3, padding='same')(cv2_1)
+    cv2_2 = Activation('relu')(cv2_2)
     # cv2_2 = Dropout(0.5)(cv2_2)
-    # mp2 = MaxPooling2D(2)(cv2_2)
+    mp2 = MaxPooling2D(2)(cv2_2)
+    mp2 = inputs
+    fl = Flatten()(mp2)
 
-    fl = Flatten()(mp1)
-
-    # fc1 = Dense(1000)(fl)
+    # fc1 = Dense(5000)(fl)
+    # fc1 = Activation('relu')(fc1)
+    #
+    # fl = fc1
+    # fc1 = Dense(2500)(fl)
     # fc1 = Activation('relu')(fc1)
 
-    fc1 = Dropout(0.5)(fl)
+    # fl = fc1
+    fc1 = Dense(1000)(fl)
+    fc1 = Activation('relu')(fc1)
+
+    fc1 = Dropout(0.5)(fc1)
 
     outputs = Dense(2)(fc1)
     outputs = Activation('softmax')(outputs)
@@ -192,7 +177,7 @@ def test_process():
     model = model_from_json(json_strings[0])
     model.load_weights("last.hdf5")  # best.hdf5 で損失最小のパラメータを使用
 
-    x_test,y_test,filenames = load_images(TRAIN_DIR)
+    x_test,y_test,filenames = load_images(TEST_DIR)
 
     preds = model.predict(x_test, batch_size=1, verbose=0)
 
